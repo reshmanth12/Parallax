@@ -49,18 +49,17 @@
     <p>Scroll to scrub the video smoothly, based on your device.</p>
   </div>
 
-  <script>
+ <script>
 document.addEventListener('DOMContentLoaded', () => {
   const isMobile = window.innerWidth <= 768;
-  const videoSrc = isMobile ? 'mobile-video.mp4' : 'desktop-video.mp4';
   const container = document.getElementById('videoContainer');
+  const videoSrc = isMobile ? 'mobile-video.mp4' : 'desktop-video.mp4';
 
   const video = document.createElement('video');
   video.src = videoSrc;
+  video.setAttribute('playsinline', '');
   video.muted = true;
-  video.playsInline = true;
   video.preload = 'auto';
-  video.controls = false;
   video.style.width = '100%';
   video.style.height = '100%';
   video.style.objectFit = 'cover';
@@ -68,22 +67,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   container.appendChild(video);
 
+  video.load(); // ⬅️ Ensure browser prepares the file
+
   video.addEventListener('loadeddata', () => {
-    let lastScroll = 0;
+    const updateScrollScrub = () => {
+      const scrollTop = window.scrollY;
+      const scrollHeight = document.body.scrollHeight - window.innerHeight;
+      const scrollRatio = scrollTop / scrollHeight;
+      if (!isNaN(video.duration) && video.duration > 0) {
+        video.currentTime = scrollRatio * video.duration;
+      }
+      requestAnimationFrame(updateScrollScrub);
+    };
 
-    window.addEventListener('wheel', (event) => {
-      const delta = Math.sign(event.deltaY);
-
-      // Scroll down = forward, scroll up = backward
-      video.currentTime = Math.min(
-        video.duration,
-        Math.max(0, video.currentTime + delta * 0.4)
-      );
-    });
-
-    // Disable right-click
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    requestAnimationFrame(updateScrollScrub);
   });
+
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
 });
 </script>
 </body>
